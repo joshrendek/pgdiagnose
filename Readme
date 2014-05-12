@@ -3,7 +3,7 @@
 ## api
 
 start a job:
-  POST /somename , body: {'url': 'postgres://...'}
+  POST /create , body: {'url': 'postgres://...'}
   response: url of result
 
 view result:
