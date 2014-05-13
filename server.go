@@ -24,7 +24,6 @@ func createJob(db *sql.DB) (id string, err error) {
 	}
 	fmt.Println("new job id: %v", id)
 	return id, nil
-
 }
 
 func create(params JobParams, db *sql.DB) (int, string) {
