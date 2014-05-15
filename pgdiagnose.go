@@ -7,7 +7,6 @@ import (
 	_ "github.com/lib/pq"
 	"log"
 	"os"
-	"time"
 )
 
 type check struct {
@@ -50,14 +49,14 @@ func connectDB(dbURL string) *sqlx.DB {
 }
 
 type longQueriesResult struct {
-	Pid   int64
-	Start time.Time
-	Query string
+	Pid      int64
+	Duration float64
+	Query    string
 }
 
 func longQueriesCheck(db *sqlx.DB) (results []longQueriesResult) {
 	query := `
-	  SELECT pid, query_start as start, query
+	  SELECT pid, now()-query_start as duration, query
 	  FROM pg_stat_activity
 	  WHERE now()-query_start > '1 minute'::interval
 		AND state <> 'idle in transaction'
@@ -67,15 +66,23 @@ func longQueriesCheck(db *sqlx.DB) (results []longQueriesResult) {
 	return results
 }
 
+func longQueriesStatus(results []longQueriesResult) string {
+	if len(results) == 0 {
+		return "green"
+	} else {
+		return "red"
+	}
+}
+
 type idleQueriesResult struct {
-	Pid   int64
-	Start time.Time
-	Query string
+	Pid      int64
+	Duration float64
+	Query    string
 }
 
 func idleQueriesCheck(db *sqlx.DB) (results []idleQueriesResult) {
 	query := `
-	  SELECT pid, query_start as start, query
+	  SELECT pid, now()-query_start as duration, query
 	  FROM pg_stat_activity
 	  WHERE now()-query_start > '1 minute'::interval
 		AND state like 'idle in trans%'
@@ -83,6 +90,14 @@ func idleQueriesCheck(db *sqlx.DB) (results []idleQueriesResult) {
 	err := db.Select(&results, query)
 	errDie(err)
 	return results
+}
+
+func idleQueriesStatus(results []idleQueriesResult) string {
+	if len(results) == 0 {
+		return "green"
+	} else {
+		return "red"
+	}
 }
 
 type unusedIndexesResult struct {
@@ -182,6 +197,14 @@ FROM index_groups;
 	return results
 }
 
+func unusedIndexesStatus(results []unusedIndexesResult) string {
+	if len(results) == 0 {
+		return "green"
+	} else {
+		return "red"
+	}
+}
+
 type bloatResult struct {
 	Type   string
 	Object string
@@ -256,6 +279,14 @@ ORDER BY raw_waste DESC, bloat DESC
 	return results
 }
 
+func bloatStatus(results []bloatResult) string {
+	if len(results) == 0 {
+		return "green"
+	} else {
+		return "red"
+	}
+}
+
 type hitRateResult struct {
 	Name  string
 	Ratio float64
@@ -279,4 +310,12 @@ SELECT * FROM rates WHERE ratio < 0.99
 	err := db.Select(&results, query)
 	errDie(err)
 	return results
+}
+
+func hitRateStatus(results []hitRateResult) string {
+	if len(results) == 0 {
+		return "green"
+	} else {
+		return "red"
+	}
 }
