@@ -30,7 +30,7 @@ func main() {
 	v[3] = bloatCheck(db)
 	v[4] = hitRateCheck(db)
 	js, _ := json.Marshal(v)
-	fmt.Println("what: ", string(js))
+	fmt.Println(string(js))
 }
 
 func errDie(err error) {
@@ -60,7 +60,7 @@ func longQueriesCheck(db *sqlx.DB) check {
 	  SELECT pid, now()-query_start as duration, query
 	  FROM pg_stat_activity
 	  WHERE now()-query_start > '1 minute'::interval
-		AND state <> 'idle in transaction'
+		AND state = 'active'
 		;`
 	var results []longQueriesResult
 	err := db.Select(&results, query)
