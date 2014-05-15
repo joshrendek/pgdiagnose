@@ -22,12 +22,13 @@ func main() {
 	}
 	db := connectDB(connstring)
 
-	v := make([]check, 4)
+	v := make([]check, 5)
 
 	v[0] = check{"Long Queries", longQueriesCheck(db)}
 	v[1] = check{"Idle in Transaction", idleQueriesCheck(db)}
 	v[2] = check{"Unused Indexes", unusedIndexesCheck(db)}
 	v[3] = check{"Bloat", bloatCheck(db)}
+	v[4] = check{"Hit Rate", hitRateCheck(db)}
 	js, _ := json.Marshal(v)
 	fmt.Println("what: ", string(js))
 }
@@ -250,6 +251,28 @@ FROM
 WHERE raw_waste > 10*1024*1024 AND bloat > 10
 ORDER BY raw_waste DESC, bloat DESC
 ;`
+	err := db.Select(&results, query)
+	errDie(err)
+	return results
+}
+
+type hitRateResult struct {
+	Name  string
+	Ratio float64
+}
+
+func hitRateCheck(db *sqlx.DB) (results []hitRateResult) {
+	query := `
+SELECT
+  'index hit rate' AS name,
+  coalesce((sum(idx_blks_hit)) / nullif(sum(idx_blks_hit + idx_blks_read), 0),0) AS ratio
+FROM pg_statio_user_indexes
+UNION ALL
+SELECT
+  'table hit rate' AS name,
+  coalesce(sum(heap_blks_hit) / nullif(sum(heap_blks_hit) + sum(heap_blks_read), 0),0) AS ratio
+FROM pg_statio_user_tables
+; `
 	err := db.Select(&results, query)
 	errDie(err)
 	return results
