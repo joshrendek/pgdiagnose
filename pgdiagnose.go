@@ -11,6 +11,7 @@ import (
 
 type check struct {
 	Name    string
+	Status  string
 	Results interface{}
 }
 
@@ -23,11 +24,11 @@ func main() {
 
 	v := make([]check, 5)
 
-	v[0] = check{"Long Queries", longQueriesCheck(db)}
-	v[1] = check{"Idle in Transaction", idleQueriesCheck(db)}
-	v[2] = check{"Unused Indexes", unusedIndexesCheck(db)}
-	v[3] = check{"Bloat", bloatCheck(db)}
-	v[4] = check{"Hit Rate", hitRateCheck(db)}
+	v[0] = longQueriesCheck(db)
+	v[1] = idleQueriesCheck(db)
+	v[2] = unusedIndexesCheck(db)
+	v[3] = bloatCheck(db)
+	v[4] = hitRateCheck(db)
 	js, _ := json.Marshal(v)
 	fmt.Println("what: ", string(js))
 }
@@ -50,20 +51,21 @@ func connectDB(dbURL string) *sqlx.DB {
 
 type longQueriesResult struct {
 	Pid      int64
-	Duration float64
+	Duration string
 	Query    string
 }
 
-func longQueriesCheck(db *sqlx.DB) (results []longQueriesResult) {
+func longQueriesCheck(db *sqlx.DB) check {
 	query := `
 	  SELECT pid, now()-query_start as duration, query
 	  FROM pg_stat_activity
 	  WHERE now()-query_start > '1 minute'::interval
 		AND state <> 'idle in transaction'
 		;`
+	var results []longQueriesResult
 	err := db.Select(&results, query)
 	errDie(err)
-	return results
+	return check{"Long Queries", longQueriesStatus(results), results}
 }
 
 func longQueriesStatus(results []longQueriesResult) string {
@@ -76,20 +78,21 @@ func longQueriesStatus(results []longQueriesResult) string {
 
 type idleQueriesResult struct {
 	Pid      int64
-	Duration float64
+	Duration string
 	Query    string
 }
 
-func idleQueriesCheck(db *sqlx.DB) (results []idleQueriesResult) {
+func idleQueriesCheck(db *sqlx.DB) check {
 	query := `
 	  SELECT pid, now()-query_start as duration, query
 	  FROM pg_stat_activity
 	  WHERE now()-query_start > '1 minute'::interval
 		AND state like 'idle in trans%'
 		;`
+	var results []idleQueriesResult
 	err := db.Select(&results, query)
 	errDie(err)
-	return results
+	return check{"Idle in Transaction", idleQueriesStatus(results), results}
 }
 
 func idleQueriesStatus(results []idleQueriesResult) string {
@@ -111,7 +114,7 @@ type unusedIndexesResult struct {
 	Table_size      string
 }
 
-func unusedIndexesCheck(db *sqlx.DB) (results []unusedIndexesResult) {
+func unusedIndexesCheck(db *sqlx.DB) check {
 	// http://www.databasesoup.com/2014/05/new-finding-unused-indexes-query.html
 	query := `
 WITH table_scans as (
@@ -192,9 +195,10 @@ SELECT reason, schemaname, tablename, indexname,
     index_scan_pct, scans_per_write, index_size, table_size
 FROM index_groups;
 `
+	var results []unusedIndexesResult
 	err := db.Select(&results, query)
 	errDie(err)
-	return results
+	return check{"Unused Indexes", unusedIndexesStatus(results), results}
 }
 
 func unusedIndexesStatus(results []unusedIndexesResult) string {
@@ -212,7 +216,7 @@ type bloatResult struct {
 	Waste  string
 }
 
-func bloatCheck(db *sqlx.DB) (results []bloatResult) {
+func bloatCheck(db *sqlx.DB) check {
 	query := `
 WITH constants AS (
   SELECT current_setting('block_size')::numeric AS bs, 23 AS hdr, 4 AS ma
@@ -274,9 +278,10 @@ FROM
 WHERE raw_waste > 10*1024*1024 AND bloat > 10
 ORDER BY raw_waste DESC, bloat DESC
 ;`
+	var results []bloatResult
 	err := db.Select(&results, query)
 	errDie(err)
-	return results
+	return check{"Bloat", bloatStatus(results), results}
 }
 
 func bloatStatus(results []bloatResult) string {
@@ -292,7 +297,7 @@ type hitRateResult struct {
 	Ratio float64
 }
 
-func hitRateCheck(db *sqlx.DB) (results []hitRateResult) {
+func hitRateCheck(db *sqlx.DB) check {
 	query := `
 WITH rates AS (
 	SELECT
@@ -307,9 +312,10 @@ WITH rates AS (
 )
 SELECT * FROM rates WHERE ratio < 0.99
 ;`
+	var results []hitRateResult
 	err := db.Select(&results, query)
 	errDie(err)
-	return results
+	return check{"Hit Rate", hitRateStatus(results), results}
 }
 
 func hitRateStatus(results []hitRateResult) string {
