@@ -1,4 +1,4 @@
-package main
+package pgdiagnose
 
 import (
 	"testing"

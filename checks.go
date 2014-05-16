@@ -1,12 +1,10 @@
-package main
+package pgdiagnose
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
 	"log"
-	"os"
 )
 
 type check struct {
@@ -15,11 +13,7 @@ type check struct {
 	Results interface{}
 }
 
-func main() {
-	connstring := "dbname=will sslmode=disable"
-	if len(os.Args) > 1 {
-		connstring = os.Args[1]
-	}
+func CheckAll(connstring string) string {
 	db := connectDB(connstring)
 
 	v := make([]check, 6)
@@ -30,7 +24,7 @@ func main() {
 	v[4] = hitRateCheck(db)
 	v[5] = blockingCheck(db)
 	js, _ := json.Marshal(v)
-	fmt.Println(string(js))
+	return string(js)
 }
 
 func errDie(err error) {
