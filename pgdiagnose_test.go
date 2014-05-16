@@ -63,3 +63,15 @@ func TestHitRateStatus(t *testing.T) {
 		t.Fatal("not red when there are results")
 	}
 }
+
+func TestBlockingStatus(t *testing.T) {
+	values := make([]blockingResult, 0)
+	if blockingStatus(values) != "green" {
+		t.Fatal("not green on empty results")
+	}
+
+	values = make([]blockingResult, 1)
+	if blockingStatus(values) != "red" {
+		t.Fatal("not red when there are results")
+	}
+}

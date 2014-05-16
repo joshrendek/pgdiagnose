@@ -22,13 +22,13 @@ func main() {
 	}
 	db := connectDB(connstring)
 
-	v := make([]check, 5)
-
+	v := make([]check, 6)
 	v[0] = longQueriesCheck(db)
 	v[1] = idleQueriesCheck(db)
 	v[2] = unusedIndexesCheck(db)
 	v[3] = bloatCheck(db)
 	v[4] = hitRateCheck(db)
+	v[5] = blockingCheck(db)
 	js, _ := json.Marshal(v)
 	fmt.Println(string(js))
 }
@@ -152,6 +152,30 @@ func hitRateCheck(db *sqlx.DB) check {
 }
 
 func hitRateStatus(results []hitRateResult) string {
+	if len(results) == 0 {
+		return "green"
+	} else {
+		return "red"
+	}
+}
+
+type blockingResult struct {
+	Blocked_pid        int
+	Blocking_statement string
+	Blocking_duration  string
+	Blocking_pid       int
+	Blocked_statement  string
+	Blocked_duration   string
+}
+
+func blockingCheck(db *sqlx.DB) check {
+	var results []blockingResult
+	err := db.Select(&results, blockingSQL)
+	errDie(err)
+	return check{"Blocking Queries", blockingStatus(results), results}
+}
+
+func blockingStatus(results []blockingResult) string {
 	if len(results) == 0 {
 		return "green"
 	} else {
@@ -329,4 +353,21 @@ WITH rates AS (
 )
 SELECT * FROM rates WHERE ratio < 0.99
 ;`
+
+	blockingSQL = `
+  SELECT bl.pid AS blocked_pid,
+    ka.query AS blocking_statement,
+    now() - ka.query_start AS blocking_duration,
+    kl.pid AS blocking_pid,
+    a.query AS blocked_statement,
+    now() - a.query_start AS blocked_duration
+  FROM pg_catalog.pg_locks bl
+  JOIN pg_catalog.pg_stat_activity a
+    ON bl.pid = a.pid
+  JOIN pg_catalog.pg_locks kl
+    JOIN pg_catalog.pg_stat_activity ka
+      ON kl.pid = ka.pid
+  ON bl.transactionid = kl.transactionid AND bl.pid != kl.pid
+  WHERE NOT bl.granted
+			;`
 )
