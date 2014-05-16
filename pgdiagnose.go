@@ -56,14 +56,8 @@ type longQueriesResult struct {
 }
 
 func longQueriesCheck(db *sqlx.DB) check {
-	query := `
-	  SELECT pid, now()-query_start as duration, query
-	  FROM pg_stat_activity
-	  WHERE now()-query_start > '1 minute'::interval
-		AND state = 'active'
-		;`
 	var results []longQueriesResult
-	err := db.Select(&results, query)
+	err := db.Select(&results, longQueriesSQL)
 	errDie(err)
 	return check{"Long Queries", longQueriesStatus(results), results}
 }
@@ -83,14 +77,8 @@ type idleQueriesResult struct {
 }
 
 func idleQueriesCheck(db *sqlx.DB) check {
-	query := `
-	  SELECT pid, now()-query_start as duration, query
-	  FROM pg_stat_activity
-	  WHERE now()-query_start > '1 minute'::interval
-		AND state like 'idle in trans%'
-		;`
 	var results []idleQueriesResult
-	err := db.Select(&results, query)
+	err := db.Select(&results, idleQueriesSQL)
 	errDie(err)
 	return check{"Idle in Transaction", idleQueriesStatus(results), results}
 }
@@ -115,8 +103,79 @@ type unusedIndexesResult struct {
 }
 
 func unusedIndexesCheck(db *sqlx.DB) check {
+	var results []unusedIndexesResult
+	err := db.Select(&results, unusedIndexesSQL)
+	errDie(err)
+	return check{"Unused Indexes", unusedIndexesStatus(results), results}
+}
+
+func unusedIndexesStatus(results []unusedIndexesResult) string {
+	if len(results) == 0 {
+		return "green"
+	} else {
+		return "red"
+	}
+}
+
+type bloatResult struct {
+	Type   string
+	Object string
+	Bloat  float64
+	Waste  string
+}
+
+func bloatCheck(db *sqlx.DB) check {
+	var results []bloatResult
+	err := db.Select(&results, bloatSQL)
+	errDie(err)
+	return check{"Bloat", bloatStatus(results), results}
+}
+
+func bloatStatus(results []bloatResult) string {
+	if len(results) == 0 {
+		return "green"
+	} else {
+		return "red"
+	}
+}
+
+type hitRateResult struct {
+	Name  string
+	Ratio float64
+}
+
+func hitRateCheck(db *sqlx.DB) check {
+	var results []hitRateResult
+	err := db.Select(&results, hitRateSQL)
+	errDie(err)
+	return check{"Hit Rate", hitRateStatus(results), results}
+}
+
+func hitRateStatus(results []hitRateResult) string {
+	if len(results) == 0 {
+		return "green"
+	} else {
+		return "red"
+	}
+}
+
+const (
+	longQueriesSQL = `
+	  SELECT pid, now()-query_start as duration, query
+	  FROM pg_stat_activity
+	  WHERE now()-query_start > '1 minute'::interval
+		AND state = 'active'
+		;`
+
+	idleQueriesSQL = `
+	  SELECT pid, now()-query_start as duration, query
+	  FROM pg_stat_activity
+	  WHERE now()-query_start > '1 minute'::interval
+		AND state like 'idle in trans%'
+		;`
+
 	// http://www.databasesoup.com/2014/05/new-finding-unused-indexes-query.html
-	query := `
+	unusedIndexesSQL = `
 WITH table_scans as (
     SELECT relid,
         tables.idx_scan + tables.seq_scan as all_scans,
@@ -195,29 +254,7 @@ SELECT reason, schemaname, tablename, indexname,
     index_scan_pct, scans_per_write, index_size, table_size
 FROM index_groups;
 `
-	var results []unusedIndexesResult
-	err := db.Select(&results, query)
-	errDie(err)
-	return check{"Unused Indexes", unusedIndexesStatus(results), results}
-}
-
-func unusedIndexesStatus(results []unusedIndexesResult) string {
-	if len(results) == 0 {
-		return "green"
-	} else {
-		return "red"
-	}
-}
-
-type bloatResult struct {
-	Type   string
-	Object string
-	Bloat  float64
-	Waste  string
-}
-
-func bloatCheck(db *sqlx.DB) check {
-	query := `
+	bloatSQL = `
 WITH constants AS (
   SELECT current_setting('block_size')::numeric AS bs, 23 AS hdr, 4 AS ma
 ), bloat_info AS (
@@ -278,27 +315,7 @@ FROM
 WHERE raw_waste > 10*1024*1024 AND bloat > 10
 ORDER BY raw_waste DESC, bloat DESC
 ;`
-	var results []bloatResult
-	err := db.Select(&results, query)
-	errDie(err)
-	return check{"Bloat", bloatStatus(results), results}
-}
-
-func bloatStatus(results []bloatResult) string {
-	if len(results) == 0 {
-		return "green"
-	} else {
-		return "red"
-	}
-}
-
-type hitRateResult struct {
-	Name  string
-	Ratio float64
-}
-
-func hitRateCheck(db *sqlx.DB) check {
-	query := `
+	hitRateSQL = `
 WITH rates AS (
 	SELECT
 		'index hit rate' AS name,
@@ -312,16 +329,4 @@ WITH rates AS (
 )
 SELECT * FROM rates WHERE ratio < 0.99
 ;`
-	var results []hitRateResult
-	err := db.Select(&results, query)
-	errDie(err)
-	return check{"Hit Rate", hitRateStatus(results), results}
-}
-
-func hitRateStatus(results []hitRateResult) string {
-	if len(results) == 0 {
-		return "green"
-	} else {
-		return "red"
-	}
-}
+)
