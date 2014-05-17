@@ -1,12 +1,12 @@
 package main
 
 import (
+	"database/sql"
 	"fmt"
 	"github.com/go-martini/martini"
-	"github.com/martini-contrib/binding"
-
-	"database/sql"
 	_ "github.com/lib/pq"
+	"github.com/martini-contrib/binding"
+	"github.com/will/pgdiagnose"
 	"log"
 	"os"
 )
@@ -15,8 +15,9 @@ type JobParams struct {
 	URL string `json:"url" binding:"required"`
 }
 
-func createJob(db *sql.DB) (id string, err error) {
-	row := db.QueryRow("INSERT INTO results DEFAULT VALUES returning id")
+func createJob(db *sql.DB, params JobParams) (id string, err error) {
+	checks := pgdiagnose.CheckAll(params.URL)
+	row := db.QueryRow("INSERT INTO results (data) values ($1) returning id", checks)
 	err = row.Scan(&id)
 	if err != nil {
 		log.Print("%v", err)
@@ -27,7 +28,7 @@ func createJob(db *sql.DB) (id string, err error) {
 }
 
 func create(params JobParams, db *sql.DB) (int, string) {
-	id, err := createJob(db)
+	id, err := createJob(db, params)
 	if err != nil {
 		log.Print("%v", err)
 		return 500, "error"
