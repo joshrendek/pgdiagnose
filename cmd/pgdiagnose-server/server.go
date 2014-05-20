@@ -22,7 +22,7 @@ type responseWithId struct {
 }
 
 func getResultJSON(id string, db *sql.DB) (json string, err error) {
-	row := db.QueryRow("SELECT row_to_json(results) FROM results WHERE id = $1", id)
+	row := db.QueryRow("SELECT row_to_json(results, true) FROM results WHERE id = $1", id)
 	err = row.Scan(&json)
 	if err != nil {
 		log.Print("%v", err)
