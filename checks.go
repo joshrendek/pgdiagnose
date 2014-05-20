@@ -8,9 +8,9 @@ import (
 )
 
 type Check struct {
-	Name    string
-	Status  string
-	Results interface{}
+	Name    string      `json:"name"`
+	Status  string      `json:"status"`
+	Results interface{} `json:"results"`
 }
 
 func CheckAll(connstring string) []Check {
@@ -48,9 +48,9 @@ func connectDB(dbURL string) *sqlx.DB {
 }
 
 type longQueriesResult struct {
-	Pid      int64
-	Duration string
-	Query    string
+	Pid      int64  `json:"pid"`
+	Duration string `json:"duration"`
+	Query    string `json:"query"`
 }
 
 func longQueriesCheck(db *sqlx.DB) Check {
@@ -69,9 +69,9 @@ func longQueriesStatus(results []longQueriesResult) string {
 }
 
 type idleQueriesResult struct {
-	Pid      int64
-	Duration string
-	Query    string
+	Pid      int64  `json:"pid"`
+	Duration string `json:"duration"`
+	Query    string `json:"query"`
 }
 
 func idleQueriesCheck(db *sqlx.DB) Check {
@@ -90,14 +90,14 @@ func idleQueriesStatus(results []idleQueriesResult) string {
 }
 
 type unusedIndexesResult struct {
-	Reason          string
-	Schemaname      string
-	Tablename       string
-	Indexname       string
-	Index_scan_pct  string
-	Scans_per_write string
-	Index_size      string
-	Table_size      string
+	Reason          string `json:"reason"`
+	Schemaname      string `json:"schemaname"`
+	Tablename       string `json:"tablename"`
+	Indexname       string `json:"indexname"`
+	Index_scan_pct  string `json:"index_scan_pct"`
+	Scans_per_write string `json:"scans_per_write"`
+	Index_size      string `json:"index_size"`
+	Table_size      string `json:"table_size"`
 }
 
 func unusedIndexesCheck(db *sqlx.DB) Check {
@@ -116,10 +116,10 @@ func unusedIndexesStatus(results []unusedIndexesResult) string {
 }
 
 type bloatResult struct {
-	Type   string
-	Object string
-	Bloat  float64
-	Waste  string
+	Type   string  `json:"type"`
+	Object string  `json:"object"`
+	Bloat  float64 `json:"bloat"`
+	Waste  string  `json:"waste"`
 }
 
 func bloatCheck(db *sqlx.DB) Check {
@@ -138,8 +138,8 @@ func bloatStatus(results []bloatResult) string {
 }
 
 type hitRateResult struct {
-	Name  string
-	Ratio float64
+	Name  string  `json:"name"`
+	Ratio float64 `json:"ratio"`
 }
 
 func hitRateCheck(db *sqlx.DB) Check {
@@ -158,12 +158,12 @@ func hitRateStatus(results []hitRateResult) string {
 }
 
 type blockingResult struct {
-	Blocked_pid        int
-	Blocking_statement string
-	Blocking_duration  string
-	Blocking_pid       int
-	Blocked_statement  string
-	Blocked_duration   string
+	Blocked_pid        int    `json:"blocked_pid"`
+	Blocking_statement string `json:"blocking_statement"`
+	Blocking_duration  string `json:"blocking_duration"`
+	Blocking_pid       int    `json:"blocking_pid"`
+	Blocked_statement  string `json:"blocked_statement"`
+	Blocked_duration   string `json:"blocked_duration"`
 }
 
 func blockingCheck(db *sqlx.DB) Check {
