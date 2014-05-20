@@ -16,11 +16,6 @@ type JobParams struct {
 	URL string `json:"url" binding:"required"`
 }
 
-type responseWithId struct {
-	Id     string
-	Checks []pgdiagnose.Check
-}
-
 func getResultJSON(id string, db *sql.DB) (json string, err error) {
 	row := db.QueryRow("SELECT row_to_json(results, true) FROM results WHERE id = $1", id)
 	err = row.Scan(&json)
