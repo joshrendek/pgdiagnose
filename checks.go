@@ -13,8 +13,12 @@ type Check struct {
 	Results interface{} `json:"results"`
 }
 
-func CheckAll(connstring string) []Check {
-	db := connectDB(connstring)
+func CheckAll(connstring string) ([]Check, error) {
+	db, err := connectDB(connstring)
+	if err != nil {
+		return nil, err
+	}
+	defer db.Close()
 
 	v := make([]Check, 6)
 	v[0] = longQueriesCheck(db)
@@ -23,7 +27,7 @@ func CheckAll(connstring string) []Check {
 	v[3] = bloatCheck(db)
 	v[4] = hitRateCheck(db)
 	v[5] = blockingCheck(db)
-	return v
+	return v, nil
 }
 
 func PrettyJSON(whatever interface{}) (string, error) {
@@ -37,14 +41,18 @@ func errDie(err error) {
 	}
 }
 
-func connectDB(dbURL string) *sqlx.DB {
+func connectDB(dbURL string) (*sqlx.DB, error) {
 	db, err := sqlx.Open("postgres", dbURL)
-	errDie(err)
+	if err != nil {
+		return nil, err
+	}
 
 	_, err = db.Exec("select 1")
-	errDie(err)
+	if err != nil {
+		return nil, err
+	}
 
-	return db
+	return db, nil
 }
 
 type longQueriesResult struct {

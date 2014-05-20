@@ -27,7 +27,10 @@ func getResultJSON(id string, db *sql.DB) (json string, err error) {
 }
 
 func createJob(db *sql.DB, params JobParams) (id string, err error) {
-	checks := pgdiagnose.CheckAll(params.URL)
+	checks, err := pgdiagnose.CheckAll(params.URL)
+	if err != nil {
+		return "", err
+	}
 
 	checksJSON, _ := pgdiagnose.PrettyJSON(checks)
 
