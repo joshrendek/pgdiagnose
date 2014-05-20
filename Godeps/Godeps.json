@@ -1,0 +1,35 @@
+{
+	"ImportPath": "github.com/will/pgdiagnose",
+	"GoVersion": "go1.2.2",
+	"Packages": [
+		"./..."
+	],
+	"Deps": [
+		{
+			"ImportPath": "github.com/codegangsta/inject",
+			"Comment": "v1.0-rc1",
+			"Rev": "37d7f8432a3e684eef9b2edece76bdfa6ac85b39"
+		},
+		{
+			"ImportPath": "github.com/go-martini/martini",
+			"Comment": "v1.0-rc1-28-g234dc6b",
+			"Rev": "234dc6b858add8eb6ca1f143545f2d643515f70b"
+		},
+		{
+			"ImportPath": "github.com/jmoiron/sqlx",
+			"Rev": "ccc1a706b692d25129d5365d9c96e5f20e21009f"
+		},
+		{
+			"ImportPath": "github.com/lib/pq",
+			"Rev": "9aab0b6cd558515af6a595e55969e8efe8e66a71"
+		},
+		{
+			"ImportPath": "github.com/martini-contrib/binding",
+			"Rev": "3c6304eca9089d5f082b80bf6bbcb8ce1c34c040"
+		},
+		{
+			"ImportPath": "github.com/will/pgdiagnose",
+			"Rev": "cafea0c877689e977ea028304af982af99127383"
+		}
+	]
+}
