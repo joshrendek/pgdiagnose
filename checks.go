@@ -7,24 +7,28 @@ import (
 	"log"
 )
 
-type check struct {
+type Check struct {
 	Name    string
 	Status  string
 	Results interface{}
 }
 
-func CheckAll(connstring string) string {
+func CheckAll(connstring string) []Check {
 	db := connectDB(connstring)
 
-	v := make([]check, 6)
+	v := make([]Check, 6)
 	v[0] = longQueriesCheck(db)
 	v[1] = idleQueriesCheck(db)
 	v[2] = unusedIndexesCheck(db)
 	v[3] = bloatCheck(db)
 	v[4] = hitRateCheck(db)
 	v[5] = blockingCheck(db)
-	js, _ := json.Marshal(v)
-	return string(js)
+	return v
+}
+
+func PrettyJSON(whatever interface{}) (string, error) {
+	js, err := json.MarshalIndent(whatever, "", "  ")
+	return string(js), err
 }
 
 func errDie(err error) {
@@ -49,11 +53,11 @@ type longQueriesResult struct {
 	Query    string
 }
 
-func longQueriesCheck(db *sqlx.DB) check {
+func longQueriesCheck(db *sqlx.DB) Check {
 	var results []longQueriesResult
 	err := db.Select(&results, longQueriesSQL)
 	errDie(err)
-	return check{"Long Queries", longQueriesStatus(results), results}
+	return Check{"Long Queries", longQueriesStatus(results), results}
 }
 
 func longQueriesStatus(results []longQueriesResult) string {
@@ -70,11 +74,11 @@ type idleQueriesResult struct {
 	Query    string
 }
 
-func idleQueriesCheck(db *sqlx.DB) check {
+func idleQueriesCheck(db *sqlx.DB) Check {
 	var results []idleQueriesResult
 	err := db.Select(&results, idleQueriesSQL)
 	errDie(err)
-	return check{"Idle in Transaction", idleQueriesStatus(results), results}
+	return Check{"Idle in Transaction", idleQueriesStatus(results), results}
 }
 
 func idleQueriesStatus(results []idleQueriesResult) string {
@@ -96,11 +100,11 @@ type unusedIndexesResult struct {
 	Table_size      string
 }
 
-func unusedIndexesCheck(db *sqlx.DB) check {
+func unusedIndexesCheck(db *sqlx.DB) Check {
 	var results []unusedIndexesResult
 	err := db.Select(&results, unusedIndexesSQL)
 	errDie(err)
-	return check{"Unused Indexes", unusedIndexesStatus(results), results}
+	return Check{"Unused Indexes", unusedIndexesStatus(results), results}
 }
 
 func unusedIndexesStatus(results []unusedIndexesResult) string {
@@ -118,11 +122,11 @@ type bloatResult struct {
 	Waste  string
 }
 
-func bloatCheck(db *sqlx.DB) check {
+func bloatCheck(db *sqlx.DB) Check {
 	var results []bloatResult
 	err := db.Select(&results, bloatSQL)
 	errDie(err)
-	return check{"Bloat", bloatStatus(results), results}
+	return Check{"Bloat", bloatStatus(results), results}
 }
 
 func bloatStatus(results []bloatResult) string {
@@ -138,11 +142,11 @@ type hitRateResult struct {
 	Ratio float64
 }
 
-func hitRateCheck(db *sqlx.DB) check {
+func hitRateCheck(db *sqlx.DB) Check {
 	var results []hitRateResult
 	err := db.Select(&results, hitRateSQL)
 	errDie(err)
-	return check{"Hit Rate", hitRateStatus(results), results}
+	return Check{"Hit Rate", hitRateStatus(results), results}
 }
 
 func hitRateStatus(results []hitRateResult) string {
@@ -162,11 +166,11 @@ type blockingResult struct {
 	Blocked_duration   string
 }
 
-func blockingCheck(db *sqlx.DB) check {
+func blockingCheck(db *sqlx.DB) Check {
 	var results []blockingResult
 	err := db.Select(&results, blockingSQL)
 	errDie(err)
-	return check{"Blocking Queries", blockingStatus(results), results}
+	return Check{"Blocking Queries", blockingStatus(results), results}
 }
 
 func blockingStatus(results []blockingResult) string {

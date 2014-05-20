@@ -12,5 +12,6 @@ func main() {
 		connstring = os.Args[1]
 	}
 
-	fmt.Println(pgdiagnose.CheckAll(connstring))
+	json, _ := pgdiagnose.PrettyJSON(pgdiagnose.CheckAll(connstring))
+	fmt.Println(json)
 }

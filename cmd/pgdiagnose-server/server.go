@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"github.com/go-martini/martini"
 	_ "github.com/lib/pq"
@@ -15,16 +16,29 @@ type JobParams struct {
 	URL string `json:"url" binding:"required"`
 }
 
+type responseWithId struct {
+	Id     string
+	Checks []pgdiagnose.Check
+}
+
 func createJob(db *sql.DB, params JobParams) (id string, err error) {
 	checks := pgdiagnose.CheckAll(params.URL)
-	row := db.QueryRow("INSERT INTO results (data) values ($1) returning id", checks)
+
+	checksJSON, _ := pgdiagnose.PrettyJSON(checks)
+
+	row := db.QueryRow("INSERT INTO results (checks) values ($1) returning id", checksJSON)
 	err = row.Scan(&id)
 	if err != nil {
 		log.Print("%v", err)
 		return "", err
 	}
-	fmt.Println("new job id: %v", id)
-	return id, nil
+
+	fmt.Println("new job id: ", id)
+
+	response := responseWithId{id, checks}
+	responseJSON, _ := json.MarshalIndent(response, "", "  ")
+
+	return string(responseJSON), nil
 }
 
 func create(params JobParams, db *sql.DB) (int, string) {
@@ -32,8 +46,9 @@ func create(params JobParams, db *sql.DB) (int, string) {
 	if err != nil {
 		log.Print("%v", err)
 		return 500, "error"
+
 	}
-	return 200, "foo: " + id
+	return 200, id
 }
 
 func setupDB() *sql.DB {
