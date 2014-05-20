@@ -8,6 +8,7 @@ import (
 	"github.com/martini-contrib/binding"
 	"github.com/will/pgdiagnose"
 	"log"
+	"net/http"
 	"os"
 )
 
@@ -70,6 +71,14 @@ func setupDB() *sql.DB {
 func main() {
 	m := martini.Classic()
 
+	if martini.Env == "production" {
+		m.Use(func(res http.ResponseWriter, req *http.Request) {
+			if req.Header.Get("X-FORWARDED-PROTO") != "https" {
+				fmt.Println("not https: ", req.Header.Get("X-FORWARDED-PROTO"))
+				res.WriteHeader(http.StatusUnauthorized)
+			}
+		})
+	}
 	m.Map(setupDB())
 	m.Post("/create", binding.Json(JobParams{}), create)
 	m.Run()
