@@ -21,6 +21,16 @@ type responseWithId struct {
 	Checks []pgdiagnose.Check
 }
 
+func getResultJSON(id string, db *sql.DB) (json string, err error) {
+	row := db.QueryRow("SELECT row_to_json(results) FROM results WHERE id = $1", id)
+	err = row.Scan(&json)
+	if err != nil {
+		log.Print("%v", err)
+		return "", err
+	}
+	return json, nil
+}
+
 func createJob(db *sql.DB, params JobParams) (id string, err error) {
 	checks := pgdiagnose.CheckAll(params.URL)
 
@@ -35,9 +45,7 @@ func createJob(db *sql.DB, params JobParams) (id string, err error) {
 
 	fmt.Println("new job id: ", id)
 
-	responseJSON, _ := pgdiagnose.PrettyJSON(responseWithId{id, checks})
-
-	return string(responseJSON), nil
+	return id, nil
 }
 
 func create(params JobParams, db *sql.DB) (int, string) {
@@ -45,9 +53,15 @@ func create(params JobParams, db *sql.DB) (int, string) {
 	if err != nil {
 		log.Print("%v", err)
 		return 500, "error"
-
 	}
-	return 200, id
+
+	json, err2 := getResultJSON(id, db)
+	if err2 != nil {
+		log.Print("%v", err2)
+		return 500, "error"
+	}
+
+	return 200, json
 }
 
 func setupDB() *sql.DB {
