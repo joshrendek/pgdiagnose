@@ -2,7 +2,6 @@ package main
 
 import (
 	"database/sql"
-	"encoding/json"
 	"fmt"
 	"github.com/go-martini/martini"
 	_ "github.com/lib/pq"
@@ -35,8 +34,7 @@ func createJob(db *sql.DB, params JobParams) (id string, err error) {
 
 	fmt.Println("new job id: ", id)
 
-	response := responseWithId{id, checks}
-	responseJSON, _ := json.MarshalIndent(response, "", "  ")
+	responseJSON, _ := pgdiagnose.PrettyJSON(responseWithId{id, checks})
 
 	return string(responseJSON), nil
 }
