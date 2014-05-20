@@ -26,10 +26,6 @@
 		{
 			"ImportPath": "github.com/martini-contrib/binding",
 			"Rev": "3c6304eca9089d5f082b80bf6bbcb8ce1c34c040"
-		},
-		{
-			"ImportPath": "github.com/will/pgdiagnose",
-			"Rev": "cafea0c877689e977ea028304af982af99127383"
 		}
 	]
 }
