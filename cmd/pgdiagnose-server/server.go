@@ -63,8 +63,8 @@ func getReport(params martini.Params, db *sql.DB) (int, string) {
 	json, err := getResultJSON(params["id"], db)
 	if err != nil {
 		return 404, ""
-
 	}
+
 	return 200, json
 }
 
