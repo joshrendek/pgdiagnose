@@ -14,13 +14,11 @@
 
 ## api
 
-start a job:
-  POST /create , body: {'url': 'postgres://...'}
-  response: url of result
+start a report:
+  POST /reports , body: {'url': 'postgres://...'}
 
 view result:
-  GET /results/:id
-
+  GET /reports/:id
 
 
 ## license

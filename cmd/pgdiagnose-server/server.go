@@ -61,6 +61,15 @@ func create(params JobParams, db *sql.DB) (int, string) {
 		return 500, "error"
 	}
 
+	return 201, json
+}
+
+func getReport(params martini.Params, db *sql.DB) (int, string) {
+	json, err := getResultJSON(params["id"], db)
+	if err != nil {
+		return 404, ""
+
+	}
 	return 200, json
 }
 
@@ -94,6 +103,7 @@ func main() {
 		})
 	}
 	m.Map(setupDB())
-	m.Post("/create", binding.Json(JobParams{}), create)
+	m.Post("/reports", binding.Json(JobParams{}), create)
+	m.Get("/reports/:id", getReport)
 	m.Run()
 }
