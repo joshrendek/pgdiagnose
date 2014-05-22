@@ -10,10 +10,29 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"regexp"
 )
 
 type JobParams struct {
-	URL string `json:"url" binding:"required"`
+	URL      string `json:"url" binding:"required"`
+	Logs     string
+	Plan     string
+	App      string
+	Database string
+}
+
+var validParams = regexp.MustCompile(`\A[a-zA-Z0-9\-_]+\z`)
+
+func (params *JobParams) sanitize() {
+	if !validParams.MatchString(params.Plan) {
+		params.Plan = ""
+	}
+	if !validParams.MatchString(params.App) {
+		params.App = ""
+	}
+	if !validParams.MatchString(params.Database) {
+		params.Database = ""
+	}
 }
 
 func getResultJSON(id string, db *sql.DB) (json string, err error) {
@@ -27,6 +46,8 @@ func getResultJSON(id string, db *sql.DB) (json string, err error) {
 }
 
 func createJob(db *sql.DB, params JobParams) (id string, err error) {
+	params.sanitize()
+
 	checks, err := pgdiagnose.CheckAll(params.URL)
 	if err != nil {
 		return "", err
