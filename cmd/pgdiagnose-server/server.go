@@ -48,10 +48,14 @@ func getResultJSON(id string, db *sql.DB) (json string, err error) {
 func createJob(db *sql.DB, params JobParams) (id string, err error) {
 	params.sanitize()
 
-	checks, err := pgdiagnose.CheckAll(params.URL)
+	checks, err := pgdiagnose.CheckSql(params.URL)
 	if err != nil {
 		return "", err
 	}
+
+	logChecks := pgdiagnose.CheckLogs(params.Database, params.Logs)
+
+	checks = append(checks, logChecks...)
 
 	checksJSON, _ := pgdiagnose.PrettyJSON(checks)
 

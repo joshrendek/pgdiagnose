@@ -7,19 +7,26 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+
+	"fmt"
 )
 
 func CheckLogs(database string, logplexURL string) []Check {
+	fmt.Println("called: ", database, logplexURL)
 	return checkLogsFromBytes(database, getData(logplexURL))
 }
 
 func checkLogsFromBytes(database string, data []byte) []Check {
 	log := findLogForDatabase(database, data)
 
-	v := make([]Check, 6)
+	v := make([]Check, 1)
 	v[0] = checkLoadOnLog(log)
 
 	return v
+}
+
+type logErrorReason struct {
+	Reason string
 }
 
 type loadAvgs struct {
@@ -30,7 +37,9 @@ type loadAvgs struct {
 
 func checkLoadOnLog(log DatabaseLog) Check {
 	if (log == DatabaseLog{}) {
-		return Check{"Load", "skipped", nil}
+		reason := make([]logErrorReason, 1)
+		reason[0] = logErrorReason{"Couldn't get logs"}
+		return Check{"Load", "skipped", reason}
 	} else {
 		load := loadAvgs{log.LoadAvg1M, log.LoadAvg5M, log.LoadAvg15M}
 		return checkLoad(load)
@@ -58,6 +67,7 @@ func getData(logplexURL string) []byte {
 	if readErr != nil {
 		return nil
 	}
+	fmt.Println(string(body))
 
 	return body
 }

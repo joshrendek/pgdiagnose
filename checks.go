@@ -13,7 +13,7 @@ type Check struct {
 	Results interface{} `json:"results"`
 }
 
-func CheckAll(connstring string) ([]Check, error) {
+func CheckSql(connstring string) ([]Check, error) {
 	db, err := connectDB(connstring)
 	if err != nil {
 		return nil, err
