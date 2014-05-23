@@ -20,6 +20,10 @@
 			"Rev": "ccc1a706b692d25129d5365d9c96e5f20e21009f"
 		},
 		{
+			"ImportPath": "github.com/kr/logfmt",
+			"Rev": "b84e30acd515aadc4b783ad4ff83aff3299bdfe0"
+		},
+		{
 			"ImportPath": "github.com/lib/pq",
 			"Rev": "9aab0b6cd558515af6a595e55969e8efe8e66a71"
 		},
