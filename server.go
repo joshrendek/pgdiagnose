@@ -6,7 +6,6 @@ import (
 	"github.com/go-martini/martini"
 	_ "github.com/lib/pq"
 	"github.com/martini-contrib/binding"
-	"github.com/will/pgdiagnose"
 	"log"
 	"net/http"
 	"os"
@@ -48,16 +47,16 @@ func getResultJSON(id string, db *sql.DB) (json string, err error) {
 func createJob(db *sql.DB, params JobParams) (id string, err error) {
 	params.sanitize()
 
-	checks, err := pgdiagnose.CheckSql(params.URL)
+	checks, err := CheckSql(params.URL)
 	if err != nil {
 		return "", err
 	}
 
-	logChecks := pgdiagnose.CheckLogs(params.Database, params.Logs)
+	logChecks := CheckLogs(params.Database, params.Logs)
 
 	checks = append(checks, logChecks...)
 
-	checksJSON, _ := pgdiagnose.PrettyJSON(checks)
+	checksJSON, _ := PrettyJSON(checks)
 
 	row := db.QueryRow("INSERT INTO results (checks) values ($1) returning id", checksJSON)
 	err = row.Scan(&id)

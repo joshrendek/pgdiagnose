@@ -1,9 +1,6 @@
 {
 	"ImportPath": "github.com/will/pgdiagnose",
 	"GoVersion": "go1.2.2",
-	"Packages": [
-		"./..."
-	],
 	"Deps": [
 		{
 			"ImportPath": "github.com/codegangsta/inject",

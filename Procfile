@@ -1,1 +1,1 @@
-web: pgdiagnose-server
+web: pgdiagnose
