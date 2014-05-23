@@ -36,13 +36,14 @@ func findLogsForDatabase(logs []byte, database string) []byte {
 }
 
 type DatabaseLog struct {
-	LoadAvg1M         float64 `logfmt:"sample#load-avg-1m"`
-	LoadAvg5M         float64 `logfmt:"sample#load-avg-5m"`
-	LoadAvg15M        float64 `logfmt:"sample#load-avg-15m"`
-	MemoryTotal       int64
-	MemoryCached      int64
-	MemoryFree        int64
-	MemoryPostgres    int64
+	LoadAvg1M      float64 `logfmt:"sample#load-avg-1m"`
+	LoadAvg5M      float64 `logfmt:"sample#load-avg-5m"`
+	LoadAvg15M     float64 `logfmt:"sample#load-avg-15m"`
+	MemoryTotal    int64
+	MemoryCached   int64
+	MemoryFree     int64
+	MemoryPostgres int64
+
 	RawMemoryTotal    string `logfmt:"sample#memory-total"`
 	RawMemoryCached   string `logfmt:"sample#memory-cached"`
 	RawMemoryFree     string `logfmt:"sample#memory-free"`

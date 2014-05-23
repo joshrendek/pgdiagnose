@@ -119,7 +119,7 @@ func unusedIndexesStatus(results []unusedIndexesResult) string {
 	if len(results) == 0 {
 		return "green"
 	} else {
-		return "red"
+		return "yellow"
 	}
 }
 
@@ -247,6 +247,7 @@ SELECT schemaname, tablename, indexname,
     FROM indexes
     JOIN table_scans
     USING (relid)
+		WHERE index_bytes > 10*1024*1024 AND table_size > 10*1024*1024
 ),
 index_groups AS (
 SELECT 'Never Used Indexes' as reason, *, 1 as grp

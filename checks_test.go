@@ -35,8 +35,8 @@ func TestUnusedIndexesStatus(t *testing.T) {
 	}
 
 	values = make([]unusedIndexesResult, 1)
-	if unusedIndexesStatus(values) != "red" {
-		t.Fatal("not red when there are results")
+	if unusedIndexesStatus(values) != "yellow" {
+		t.Fatal("not yellow when there are results")
 	}
 }
 
