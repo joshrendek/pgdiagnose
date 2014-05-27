@@ -9,7 +9,7 @@ type Plan struct {
 }
 
 func GetPlan(name string) Plan {
-	switch trimNme(name) {
+	switch trimName(name) {
 	case "dev", "basic":
 		return Plan{20}
 	case "crane", "yanari":
@@ -26,10 +26,10 @@ func GetPlan(name string) Plan {
 	return Plan{}
 }
 
-func trimNme(name string) string {
-	name = strings.TrimLeft(name, "enterprise-")
-	name = strings.TrimLeft(name, "premium-")
-	name = strings.TrimLeft(name, "standard-")
-	name = strings.TrimLeft(name, "hobby-")
+func trimName(name string) string {
+	name = strings.TrimPrefix(name, "enterprise-")
+	name = strings.TrimPrefix(name, "premium-")
+	name = strings.TrimPrefix(name, "standard-")
+	name = strings.TrimPrefix(name, "hobby-")
 	return name
 }
