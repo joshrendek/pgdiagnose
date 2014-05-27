@@ -36,12 +36,6 @@ func PrettyJSON(whatever interface{}) (string, error) {
 	return string(js), err
 }
 
-func errDie(err error) {
-	if err != nil {
-		log.Fatal(err)
-	}
-}
-
 func connectDB(dbURL string) (*sqlx.DB, error) {
 	db, err := sqlx.Open("postgres", dbURL)
 	if err != nil {
@@ -56,15 +50,23 @@ func connectDB(dbURL string) (*sqlx.DB, error) {
 	return db, nil
 }
 
+func makeErrorCheck(name string, err error) Check {
+	log.Println(err)
+	return Check{name, "skipped", "error"}
+}
+
 type connCountResult struct {
 	Count int64 `json:"count"`
 }
 
 func connCountCheck(db *sqlx.DB, limit int) Check {
+	checkTitle := "Connection Count"
 	var result []connCountResult
 	err := db.Select(&result, "SELECT count(*) FROM pg_stat_activity where usename = current_user")
-	errDie(err)
-	return Check{"Connection Count", connCountStuats(result[0].Count, limit), result}
+	if err != nil {
+		return makeErrorCheck(checkTitle, err)
+	}
+	return Check{checkTitle, connCountStuats(result[0].Count, limit), result}
 }
 
 func connCountStuats(count int64, limit int) string {
@@ -85,10 +87,13 @@ type longQueriesResult struct {
 }
 
 func longQueriesCheck(db *sqlx.DB) Check {
+	checkTitle := "Long Queries"
 	var results []longQueriesResult
 	err := db.Select(&results, longQueriesSQL)
-	errDie(err)
-	return Check{"Long Queries", longQueriesStatus(results), results}
+	if err != nil {
+		return makeErrorCheck(checkTitle, err)
+	}
+	return Check{checkTitle, longQueriesStatus(results), results}
 }
 
 func longQueriesStatus(results []longQueriesResult) string {
@@ -106,10 +111,13 @@ type idleQueriesResult struct {
 }
 
 func idleQueriesCheck(db *sqlx.DB) Check {
+	checkTitle := "Idle in Transaction"
 	var results []idleQueriesResult
 	err := db.Select(&results, idleQueriesSQL)
-	errDie(err)
-	return Check{"Idle in Transaction", idleQueriesStatus(results), results}
+	if err != nil {
+		return makeErrorCheck(checkTitle, err)
+	}
+	return Check{checkTitle, idleQueriesStatus(results), results}
 }
 
 func idleQueriesStatus(results []idleQueriesResult) string {
@@ -132,10 +140,13 @@ type unusedIndexesResult struct {
 }
 
 func unusedIndexesCheck(db *sqlx.DB) Check {
+	checkTitle := "Unused Indexes"
 	var results []unusedIndexesResult
 	err := db.Select(&results, unusedIndexesSQL)
-	errDie(err)
-	return Check{"Unused Indexes", unusedIndexesStatus(results), results}
+	if err != nil {
+		return makeErrorCheck(checkTitle, err)
+	}
+	return Check{checkTitle, unusedIndexesStatus(results), results}
 }
 
 func unusedIndexesStatus(results []unusedIndexesResult) string {
@@ -154,10 +165,13 @@ type bloatResult struct {
 }
 
 func bloatCheck(db *sqlx.DB) Check {
+	checkTitle := "Bloat"
 	var results []bloatResult
 	err := db.Select(&results, bloatSQL)
-	errDie(err)
-	return Check{"Bloat", bloatStatus(results), results}
+	if err != nil {
+		return makeErrorCheck(checkTitle, err)
+	}
+	return Check{checkTitle, bloatStatus(results), results}
 }
 
 func bloatStatus(results []bloatResult) string {
@@ -174,10 +188,13 @@ type hitRateResult struct {
 }
 
 func hitRateCheck(db *sqlx.DB) Check {
+	checkTitle := "Hit Rate"
 	var results []hitRateResult
 	err := db.Select(&results, hitRateSQL)
-	errDie(err)
-	return Check{"Hit Rate", hitRateStatus(results), results}
+	if err != nil {
+		return makeErrorCheck(checkTitle, err)
+	}
+	return Check{checkTitle, hitRateStatus(results), results}
 }
 
 func hitRateStatus(results []hitRateResult) string {
@@ -198,10 +215,13 @@ type blockingResult struct {
 }
 
 func blockingCheck(db *sqlx.DB) Check {
+	checkTitle := "Blocking Queries"
 	var results []blockingResult
 	err := db.Select(&results, blockingSQL)
-	errDie(err)
-	return Check{"Blocking Queries", blockingStatus(results), results}
+	if err != nil {
+		return makeErrorCheck(checkTitle, err)
+	}
+	return Check{checkTitle, blockingStatus(results), results}
 }
 
 func blockingStatus(results []blockingResult) string {
