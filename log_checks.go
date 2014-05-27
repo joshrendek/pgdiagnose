@@ -25,10 +25,6 @@ func checkLogsFromBytes(database string, data []byte) []Check {
 	return v
 }
 
-type logErrorReason struct {
-	Reason string
-}
-
 type loadAvgs struct {
 	LoadAvg1M  float64
 	LoadAvg5M  float64
@@ -37,8 +33,8 @@ type loadAvgs struct {
 
 func checkLoadOnLog(log DatabaseLog) Check {
 	if (log == DatabaseLog{}) {
-		reason := make([]logErrorReason, 1)
-		reason[0] = logErrorReason{"Couldn't get logs"}
+		reason := make(map[string]string)
+		reason["error"] = "Couldn't get logs"
 		return Check{"Load", "skipped", reason}
 	} else {
 		load := loadAvgs{log.LoadAvg1M, log.LoadAvg5M, log.LoadAvg15M}

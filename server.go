@@ -47,7 +47,9 @@ func getResultJSON(id string, db *sql.DB) (json string, err error) {
 func createJob(db *sql.DB, params JobParams) (id string, err error) {
 	params.sanitize()
 
-	checks, err := CheckSql(params.URL)
+	plan := GetPlan(params.Plan)
+
+	checks, err := CheckSql(params.URL, plan)
 	if err != nil {
 		return "", err
 	}

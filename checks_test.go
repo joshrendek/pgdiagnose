@@ -4,6 +4,20 @@ import (
 	"testing"
 )
 
+func TestConnCountStatus(t *testing.T) {
+	if connCountStuats(1, 100) != "green" {
+		t.Fatal("not green on low conn count")
+	}
+
+	if connCountStuats(76, 100) != "yellow" {
+		t.Fatal("not yellow on medium conn count")
+	}
+
+	if connCountStuats(91, 100) != "red" {
+		t.Fatal("not red on high conn count")
+	}
+}
+
 func TestLongQueriesStatus(t *testing.T) {
 	values := make([]longQueriesResult, 0)
 	if longQueriesStatus(values) != "green" {

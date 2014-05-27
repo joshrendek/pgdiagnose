@@ -13,20 +13,21 @@ type Check struct {
 	Results interface{} `json:"results"`
 }
 
-func CheckSql(connstring string) ([]Check, error) {
+func CheckSql(connstring string, plan Plan) ([]Check, error) {
 	db, err := connectDB(connstring)
 	if err != nil {
 		return nil, err
 	}
 	defer db.Close()
 
-	v := make([]Check, 6)
-	v[0] = longQueriesCheck(db)
-	v[1] = idleQueriesCheck(db)
-	v[2] = unusedIndexesCheck(db)
-	v[3] = bloatCheck(db)
-	v[4] = hitRateCheck(db)
-	v[5] = blockingCheck(db)
+	v := make([]Check, 7)
+	v[0] = connCountCheck(db, plan.ConnectionLimit)
+	v[1] = longQueriesCheck(db)
+	v[2] = idleQueriesCheck(db)
+	v[3] = unusedIndexesCheck(db)
+	v[4] = bloatCheck(db)
+	v[5] = hitRateCheck(db)
+	v[6] = blockingCheck(db)
 	return v, nil
 }
 
@@ -53,6 +54,28 @@ func connectDB(dbURL string) (*sqlx.DB, error) {
 	}
 
 	return db, nil
+}
+
+type connCountResult struct {
+	Count int64 `json:"count"`
+}
+
+func connCountCheck(db *sqlx.DB, limit int) Check {
+	var result []connCountResult
+	err := db.Select(&result, "SELECT count(*) FROM pg_stat_activity where usename = current_user")
+	errDie(err)
+	return Check{"Connection Count", connCountStuats(result[0].Count, limit), result}
+}
+
+func connCountStuats(count int64, limit int) string {
+	perc := float64(count) / float64(limit)
+	switch {
+	case perc >= 0.75 && perc < 0.9:
+		return "yellow"
+	case perc >= 0.9:
+		return "red"
+	}
+	return "green"
 }
 
 type longQueriesResult struct {
