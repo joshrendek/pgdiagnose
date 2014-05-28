@@ -132,9 +132,7 @@ func idleQueriesStatus(results []idleQueriesResult) string {
 
 type unusedIndexesResult struct {
 	Reason          string `json:"reason"`
-	Schemaname      string `json:"schemaname"`
-	Tablename       string `json:"tablename"`
-	Indexname       string `json:"indexname"`
+	Index           string `json:"index"`
 	Index_scan_pct  string `json:"index_scan_pct"`
 	Scans_per_write string `json:"scans_per_write"`
 	Index_size      string `json:"index_size"`
@@ -279,7 +277,7 @@ indexes as (
     WHERE pg_index.indisunique = FALSE
 ),
 index_ratios AS (
-SELECT schemaname, tablename, indexname,
+	SELECT schemaname || '.' || tablename || '::' || indexname as index,
     idx_scan, all_scans,
     round(( CASE WHEN all_scans = 0 THEN 0.0::NUMERIC
         ELSE idx_scan::NUMERIC/all_scans * 100 END),2) as index_scan_pct,
@@ -326,7 +324,7 @@ WHERE
     AND NOT idx_is_btree
     AND index_bytes > 100000000
 ORDER BY grp, index_bytes DESC )
-SELECT reason, schemaname, tablename, indexname,
+SELECT reason, index,
     index_scan_pct, scans_per_write, index_size, table_size
 FROM index_groups;
 `
