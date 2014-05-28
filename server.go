@@ -60,7 +60,7 @@ func createJob(db *sql.DB, params JobParams) (id string, err error) {
 
 	checksJSON, _ := PrettyJSON(checks)
 
-	row := db.QueryRow("INSERT INTO results (checks) values ($1) returning id", checksJSON)
+	row := db.QueryRow("INSERT INTO results (app,database,checks) values ($1,$2,$3) returning id", params.App, params.Database, checksJSON)
 	err = row.Scan(&id)
 	if err != nil {
 		log.Print("%v", err)
