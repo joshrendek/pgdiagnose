@@ -52,7 +52,9 @@ func connectDB(dbURL string) (*sqlx.DB, error) {
 
 func makeErrorCheck(name string, err error) Check {
 	log.Println(err)
-	return Check{name, "skipped", "error"}
+	reason := make(map[string]string)
+	reason["error"] = "could not do check"
+	return Check{name, "skipped", reason}
 }
 
 type connCountResult struct {
