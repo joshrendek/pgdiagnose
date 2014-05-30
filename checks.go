@@ -158,10 +158,10 @@ func unusedIndexesStatus(results []unusedIndexesResult) string {
 }
 
 type bloatResult struct {
-	Type   string  `json:"type"`
-	Object string  `json:"object"`
-	Bloat  float64 `json:"bloat"`
-	Waste  string  `json:"waste"`
+	Type   string `json:"type"`
+	Object string `json:"object"`
+	Bloat  int64  `json:"bloat"`
+	Waste  string `json:"waste"`
 }
 
 func bloatCheck(db *sqlx.DB) Check {
@@ -369,7 +369,7 @@ WITH constants AS (
   JOIN pg_class c2 ON c2.oid = i.indexrelid
 )
 SELECT
-  type, object, bloat, pg_size_pretty(raw_waste) as waste
+	type, object, bloat::int, pg_size_pretty(raw_waste) as waste
 FROM
 (SELECT
   'table' as type,
