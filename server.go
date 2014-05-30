@@ -106,6 +106,15 @@ func getReport(params martini.Params, db *sql.DB) (int, string) {
 	return 200, json
 }
 
+func health(db *sql.DB) (int, string) {
+	_, err := db.Exec("select 1")
+	if err != nil {
+		log.Println(err)
+		return 500, "database error"
+	}
+	return 200, "ok"
+}
+
 func setupDB() *sql.DB {
 	connstring := os.Getenv("DATABASE_URL")
 	if connstring == "" {
@@ -138,5 +147,6 @@ func main() {
 	m.Map(setupDB())
 	m.Post("/reports", binding.Json(JobParams{}), create)
 	m.Get("/reports/:id", getReport)
+	m.Get("/health", health)
 	m.Run()
 }
