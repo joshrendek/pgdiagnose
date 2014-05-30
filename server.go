@@ -13,8 +13,10 @@ import (
 )
 
 type JobParams struct {
-	URL      string `json:"url" binding:"required"`
-	Logs     string
+	URL     string `json:"url" binding:"required"`
+	Metrics []struct {
+		LoadAvg1m *float64 `json:"load_avg_1m"`
+	}
 	Plan     string
 	App      string
 	Database string
@@ -54,9 +56,16 @@ func createJob(db *sql.DB, params JobParams) (id string, err error) {
 		return "", err
 	}
 
-	logChecks := CheckLogs(params.Database, params.Logs)
+	fmt.Println(params.Metrics)
 
-	checks = append(checks, logChecks...)
+	loadChecks := func() []Check {
+		if len(params.Metrics) > 0 {
+			return CheckLoad(params.Metrics[0].LoadAvg1m)
+		} else {
+			return CheckLoad(nil)
+		}
+	}()
+	checks = append(checks, loadChecks...)
 
 	checksJSON, _ := PrettyJSON(checks)
 
