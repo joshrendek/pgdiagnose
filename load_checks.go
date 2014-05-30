@@ -1,17 +1,21 @@
 package main
 
+import "fmt"
+
 func CheckLoad(load *float64) []Check {
 
 	var loadCheck Check
 
+	reason := make(map[string]string)
 	if load == nil {
-		reason := make(map[string]string)
 		reason["error"] = "Load check not supported on this plan"
 		loadCheck = Check{"Load", "skipped", reason}
 	} else if *load > 2 {
-		loadCheck = Check{"Load", "red", load}
+		reason["load"] = fmt.Sprintf("%v", *load)
+		loadCheck = Check{"Load", "red", reason}
 	} else if *load > 1 {
-		loadCheck = Check{"Load", "yellow", load}
+		reason["load"] = fmt.Sprintf("%v", *load)
+		loadCheck = Check{"Load", "yellow", reason}
 	} else {
 		loadCheck = Check{"Load", "green", nil}
 	}
