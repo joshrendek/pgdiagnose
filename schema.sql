@@ -7,6 +7,7 @@ create table results (
   created_at timestamptz default now(),
   app text,
   database text,
+  url text,
   checks json
 );
 

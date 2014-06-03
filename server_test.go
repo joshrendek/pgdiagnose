@@ -28,3 +28,20 @@ func TestSanitizeJopParams(t *testing.T) {
 		}
 	}
 }
+
+func TestRemovePassword(t *testing.T) {
+	input := "postgres://user:pass@host:5432/dbname"
+	expected := "postgres://user:@host:5432/dbname"
+	output := removePassword(input)
+	if output != expected {
+		t.Errorf("Expected %v, but was %v", expected, output)
+	}
+
+	input = "postgres://usewhathappened"
+	expected = ""
+	output = removePassword(input)
+	if output != expected {
+		t.Errorf("Expected %v, but was %v", expected, output)
+	}
+
+}

@@ -2,12 +2,14 @@ package main
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"github.com/go-martini/martini"
 	_ "github.com/lib/pq"
 	"github.com/martini-contrib/binding"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"regexp"
 )
@@ -36,6 +38,22 @@ func (params *JobParams) sanitize() {
 	}
 }
 
+func removePassword(s string) string {
+	u, err := url.Parse(s)
+	if err != nil {
+		return ""
+	}
+
+	if u.User == nil {
+		return ""
+	}
+
+	user := u.User.Username()
+	u.User = url.UserPassword(user, "")
+	str := u.String()
+	return str
+}
+
 func getResultJSON(id string, db *sql.DB) (json string, err error) {
 	row := db.QueryRow("SELECT row_to_json(results, true) FROM results WHERE id = $1", id)
 	err = row.Scan(&json)
@@ -48,6 +66,10 @@ func getResultJSON(id string, db *sql.DB) (json string, err error) {
 
 func createJob(db *sql.DB, params JobParams) (id string, err error) {
 	params.sanitize()
+	sanitizedURL := removePassword(params.URL)
+	if sanitizedURL == "" {
+		return "", errors.New("bad postgres url")
+	}
 
 	plan := GetPlan(params.Plan)
 
@@ -69,7 +91,10 @@ func createJob(db *sql.DB, params JobParams) (id string, err error) {
 
 	checksJSON, _ := PrettyJSON(checks)
 
-	row := db.QueryRow("INSERT INTO results (app,database,checks) values ($1,$2,$3) returning id", params.App, params.Database, checksJSON)
+	row := db.QueryRow(
+		"INSERT INTO results (app,database,url,checks) values ($1,$2,$3,$4) returning id",
+		params.App, params.Database, sanitizedURL, checksJSON)
+
 	err = row.Scan(&id)
 	if err != nil {
 		log.Print("%v", err)
