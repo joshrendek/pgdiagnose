@@ -290,7 +290,7 @@ index_ratios AS (
     FROM indexes
     JOIN table_scans
     USING (relid)
-		WHERE index_bytes > 10*1024*1024 AND table_size > 10*1024*1024
+		WHERE index_bytes > 64*1024*1024 AND table_size > 64*1024*1024
 ),
 index_groups AS (
 SELECT 'Never Used Indexes' as reason, *, 1 as grp
@@ -386,22 +386,37 @@ SELECT
   CASE WHEN ipages < iotta THEN '0' ELSE (bs*(ipages-iotta))::bigint END AS raw_waste
 FROM
   index_bloat) bloat_summary
-WHERE raw_waste > 10*1024*1024 AND bloat > 10
+WHERE raw_waste > 64*1024*1024 AND bloat > 10
 ORDER BY raw_waste DESC, bloat DESC
 ;`
 	hitRateSQL = `
-WITH rates AS (
-	SELECT
-		'index hit rate' AS name,
-		sum(idx_blks_hit) / nullif(sum(idx_blks_hit + idx_blks_read), 0) AS ratio
-	FROM pg_statio_user_indexes
-	UNION ALL
-	SELECT
-		'table hit rate' AS name,
-		sum(heap_blks_hit) / nullif(sum(heap_blks_hit) + sum(heap_blks_read), 0) AS ratio
-	FROM pg_statio_user_tables
+WITH overall_rates AS (
+  SELECT
+    'overall index hit rate' AS name,
+    sum(idx_blks_hit) / nullif(sum(idx_blks_hit + idx_blks_read), 0) AS ratio
+  FROM pg_statio_user_indexes
+  UNION ALL
+  SELECT
+    'overall table hit rate' AS name,
+    sum(heap_blks_hit) / nullif(sum(heap_blks_hit) + sum(heap_blks_read), 0) AS ratio
+  FROM pg_statio_user_tables
 )
-SELECT * FROM rates WHERE ratio < 0.99
+, table_rates AS (
+  SELECT
+    schemaname || '.' || relname AS name,
+    idx_scan::float/(seq_scan+idx_scan) as ratio
+  FROM pg_stat_user_tables
+  WHERE
+     pg_total_relation_size(relid) > 64*1024*1024
+     AND idx_scan > 0
+)
+, combined AS (
+  SELECT * FROM overall_rates
+  UNION ALL
+  SELECT * FROM table_rates
+)
+
+SELECT * FROM combined WHERE ratio < 0.99
 ;`
 
 	blockingSQL = `
