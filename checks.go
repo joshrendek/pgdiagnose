@@ -140,7 +140,7 @@ type unusedIndexesResult struct {
 }
 
 func unusedIndexesCheck(db *sqlx.DB) Check {
-	checkTitle := "Unused Indexes"
+	checkTitle := "Indexes"
 	var results []unusedIndexesResult
 	err := db.Select(&results, unusedIndexesSQL)
 	if err != nil {
@@ -316,16 +316,10 @@ WHERE
     and idx_scan > 0
     and idx_is_btree
     and index_bytes > 100000000
-UNION ALL
-SELECT 'High-Write Large Non-Btree' as reason, index_ratios.*, 4 as grp
-FROM index_ratios, all_writes
-WHERE
-    ( writes::NUMERIC / ( total_writes + 1 ) ) > 0.02
-    AND NOT idx_is_btree
-    AND index_bytes > 100000000
-ORDER BY grp, index_bytes DESC )
+)
+
 SELECT reason, index,
-    index_scan_pct, scans_per_write, index_size, table_size
+  index_scan_pct, scans_per_write, index_size, table_size
 FROM index_groups;
 `
 	bloatSQL = `
