@@ -12,6 +12,7 @@ import (
 	"net/url"
 	"os"
 	"regexp"
+	"time"
 )
 
 type JobParams struct {
@@ -22,6 +23,11 @@ type JobParams struct {
 	Plan     string
 	App      string
 	Database string
+}
+
+type ResponseWithCode struct {
+	Code int
+	Body string
 }
 
 var validParams = regexp.MustCompile(`\A[a-zA-Z0-9\-_]+\z`)
@@ -107,19 +113,30 @@ func createJob(db *sql.DB, params JobParams) (id string, err error) {
 }
 
 func create(params JobParams, db *sql.DB) (int, string) {
-	id, err := createJob(db, params)
-	if err != nil {
-		log.Print("%v", err)
-		return 500, "error"
+	c := make(chan ResponseWithCode, 1)
+	go func() {
+		id, err := createJob(db, params)
+		if err != nil {
+			log.Print("%v", err)
+			c <- ResponseWithCode{500, `{"error": "Couldn't create job"}`}
+		}
+
+		json, err2 := getResultJSON(id, db)
+		if err2 != nil {
+			log.Print("%v", err2)
+			c <- ResponseWithCode{500, `{"error": "Couldn't send report"}`}
+		}
+
+		c <- ResponseWithCode{201, json}
+	}()
+
+	select {
+	case res := <-c:
+		return res.Code, res.Body
+	case <-time.After(time.Second * 25):
+		return 500, `{"error": "Couldn't finish job in time"}`
 	}
 
-	json, err2 := getResultJSON(id, db)
-	if err2 != nil {
-		log.Print("%v", err2)
-		return 500, "error"
-	}
-
-	return 201, json
 }
 
 func getReport(params martini.Params, db *sql.DB) (int, string) {
